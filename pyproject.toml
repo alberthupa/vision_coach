@@ -1,0 +1,59 @@
+[project]
+name = "workout-ml"
+version = "0.1.0"
+description = "Local workout recognition pipeline"
+readme = "README.md"
+authors = [
+    { name = "Albert Hupa", email = "hupa.albert@gmail.com" }
+]
+requires-python = ">=3.11"
+dependencies = [
+    "duckdb>=1.5.4",
+    "faster-whisper>=1.2.1",
+    "mediapipe>=0.10.35",
+    "mlflow>=3.14.0",
+    "numpy>=2.4.6",
+    "opencv-python>=4.13.0.92",
+    "paddleocr>=3.4.1",
+    "paddlepaddle>=3.3.1",
+    "pandas>=2.3.3",
+    "pyarrow>=24.0.0",
+    "pydantic>=2.13.4",
+    "pydantic-settings>=2.14.2",
+    "pyyaml>=6.0.2",
+    "pytest>=9.1.1",
+    "pytorch-lightning>=2.6.5",
+    "rapidfuzz>=3.14.5",
+    "rich>=15.0.0",
+    "scipy>=1.17.1",
+    "sentence-transformers>=5.6.0",
+    "torch==2.5.1+cpu",
+    "torchvision==0.20.1+cpu",
+    "typer>=0.26.7",
+    "yt-dlp>=2026.6.9",
+]
+
+[project.scripts]
+workout-ml = "workout_ml.cli:app"
+
+[tool.pytest.ini_options]
+testpaths = [
+    "tests",
+]
+
+[tool.uv.sources]
+torch = [
+    { index = "pytorch-cpu" },
+]
+torchvision = [
+    { index = "pytorch-cpu" },
+]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

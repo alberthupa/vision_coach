@@ -1,0 +1,8 @@
+model:
+  name: baseline_temporal_classifier
+  max_epochs: 20
+  batch_size: 128
+  learning_rate: 0.001
+mlflow:
+  tracking_uri: sqlite:///data/mlflow.db
+  artifact_root: data/mlruns

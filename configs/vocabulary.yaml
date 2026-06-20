@@ -1,0 +1,6 @@
+version: v1
+meta_classes:
+  - rest
+  - transition
+  - unknown
+exercises: {}

@@ -102,10 +102,10 @@ workout-ml/
 
 ### Epic A — Foundation and reproducibility
 
-- [ ] Scaffold the repository, configuration models, CLI, tests, and Makefile.
-- [ ] Create CPU environment and verify all required imports and system tools.
-- [ ] Implement artifact fingerprints, atomic writes, and stage lineage metadata.
-- [ ] Add structured progress reporting and per-item failure logs.
+- [x] Scaffold the repository, configuration models, CLI, tests, and Makefile.
+- [x] Create CPU environment and verify all required imports and system tools.
+- [x] Implement artifact fingerprints, atomic writes, and stage lineage metadata.
+- [x] Add structured progress reporting and per-item failure logs.
 
 Use `uv` for environment management. Keep the supported CPU environment on Python 3.11 for broad MediaPipe and OCR wheel coverage. The optional ROCm environment is separate and follows AMD's supported Python/ROCm matrix.
 
@@ -131,6 +131,61 @@ Notes:
 - `uv run python -c "import mediapipe, paddleocr, faster_whisper, torch, duckdb; print('ok')"` prints `ok`.
 - `ffmpeg -version` works.
 - `pytest` runs (zero tests is fine at this point).
+
+### Phase 0 implementation notes — 2026-06-20
+
+Completed in this repository:
+
+- Initialized a `uv` package named `workout-ml` on Python 3.11 (`.python-version`, `pyproject.toml`, `uv.lock`, `.venv/`).
+- Added the Phase 0 CPU dependency set: `yt-dlp`, MediaPipe, OpenCV, NumPy/SciPy/Pandas/PyArrow, DuckDB, PaddleOCR/PaddlePaddle, Faster Whisper, RapidFuzz, Sentence Transformers, PyTorch Lightning, MLflow, Typer, Pydantic, pydantic-settings, Rich, and pytest.
+- Adjusted PyTorch to a CPU-only lock: `torch==2.5.1+cpu` and `torchvision==0.20.1+cpu` from the PyTorch CPU wheel index. The first unconstrained resolve selected current CUDA-related dependencies, which contradicts the CPU-first Phase 0 requirement.
+- Added `pyyaml` as a direct dependency because the project configuration contract is YAML.
+- Added base config files under `configs/`: `pipeline.yaml`, `train.yaml`, `vocabulary.yaml`, and `sources.yaml`.
+- Added planned package boundaries under `src/workout_ml/`: `ingest`, `labeling`, `pose`, `dataset`, `models`, `reps`, and `realtime`.
+- Added `src/workout_ml/settings.py` with pydantic-settings-backed pipeline config models, data-directory creation, and worker thread-cap environment generation (`OMP_NUM_THREADS=2`, `OPENBLAS_NUM_THREADS=2`, `MKL_NUM_THREADS=2`, `NUMEXPR_NUM_THREADS=2` by default).
+- Added `src/workout_ml/artifacts.py` with stable canonical JSON fingerprints, file fingerprints, `ArtifactLineage`, atomic writes, and atomic JSON writes.
+- Added `src/workout_ml/progress.py` with JSON progress output and per-stage JSONL failure logs at `data/logs/<stage>_failures.jsonl`.
+- Added `src/workout_ml/catalog.py` with initial typed stage-status metadata. DuckDB table creation and catalog persistence remain Phase 1 work.
+- Added a Typer CLI at `workout-ml` with `doctor`, `log-failure`, and placeholder commands for later stages (`ingest`, `label`, `pose`, `dataset`, `train`, `app`). The placeholders intentionally exit non-zero until their phases are implemented.
+- Added a `Makefile` with `verify`, `imports`, `test`, `mlflow`, and stage targets. `make mlflow` uses `sqlite:///data/mlflow.db` and `data/mlruns` as planned.
+- Added a short `README.md` with Phase 0 verification and basic CLI commands.
+- Added `.gitignore` for `.venv`, Python caches, test caches, build metadata, and `data/`.
+
+Environment notes:
+
+- `uv` was already installed (`uv 0.5.9`).
+- `ffmpeg` was already installed (`ffmpeg 6.1.1-3ubuntu5`), so no `apt-get` step was required.
+- The sandboxed `uv` cache under `~/.cache` was read-only, so commands used `UV_CACHE_DIR=/tmp/uv-cache`.
+- The large PyTorch CPU wheel needed network access and a longer timeout; the successful install used `UV_HTTP_TIMEOUT=180`.
+- `make verify` sets `MPLCONFIGDIR=/tmp/workout-ml-matplotlib` to avoid Matplotlib cache warnings in the restricted home directory.
+- `make verify` sets `PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK=True` to skip PaddleOCR's import-time model host connectivity check. A direct import without this variable still imports successfully and prints `ok`, but Paddle reports that no remote model hoster is reachable. Phase 2 should explicitly handle OCR model availability/local caching before running OCR extraction.
+
+Verification output:
+
+```text
+$ env UV_CACHE_DIR=/tmp/uv-cache uv run python -c "import mediapipe, paddleocr, faster_whisper, torch, duckdb; print('ok')"
+Checking connectivity to the model hosters, this may take a while. To bypass this check, set `PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK` to `True`.
+No model hoster is available! Please check your network connection to one of the following model hoster: HuggingFace (https://huggingface.co), ModelScope (https://modelscope.cn), AIStudio (https://aistudio.baidu.com), or BOS (https://paddle-model-ecology.bj.bcebos.com). Otherwise, only local models can be used.
+ok
+
+$ ffmpeg -version
+ffmpeg version 6.1.1-3ubuntu5
+
+$ env UV_CACHE_DIR=/tmp/uv-cache uv run pytest
+collected 7 items
+7 passed in 0.10s
+
+$ make verify
+Connectivity check to the model hoster has been skipped because `PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK` is enabled.
+ok
+collected 7 items
+7 passed in 0.11s
+```
+
+Testing decision:
+
+- Tests are appropriate already because Phase 0 now contains pure logic, not only packaging. Added focused unit tests for deterministic fingerprints, atomic JSON replacement, artifact lineage metadata, failure JSONL logging, config loading, data-directory creation, and nested-parallelism thread caps.
+- No tests were added for thin wrappers such as CLI placeholder commands or `Makefile` targets. Those are covered by direct verification commands at this stage.
 
 ---
 

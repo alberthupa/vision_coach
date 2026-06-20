@@ -1,0 +1,20 @@
+paths:
+  data_dir: data
+  raw_dir: data/raw
+  labels_dir: data/labels
+  poses_dir: data/poses
+  datasets_dir: data/datasets
+  models_dir: data/models
+  logs_dir: data/logs
+  catalog_path: data/catalog.duckdb
+runtime:
+  default_workers: 4
+  worker_omp_threads: 2
+  progress_refresh_seconds: 1.0
+artifacts:
+  fingerprint_size: 16
+  atomic_suffix: .tmp
+video:
+  target_fps: 1.0
+  max_height: 720
+  download_retries: 2
