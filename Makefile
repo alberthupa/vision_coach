@@ -1,7 +1,7 @@
 .PHONY: verify imports test mlflow ingest label pose dataset train app
 
-UV_CACHE_DIR ?= /tmp/uv-cache
-MPLCONFIGDIR ?= /tmp/workout-ml-matplotlib
+UV_CACHE_DIR ?= .cache/uv
+MPLCONFIGDIR ?= .cache/matplotlib
 UV := env UV_CACHE_DIR=$(UV_CACHE_DIR) MPLCONFIGDIR=$(MPLCONFIGDIR) PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK=True uv
 
 verify: imports test

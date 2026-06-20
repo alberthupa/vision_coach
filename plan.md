@@ -149,21 +149,21 @@ Completed in this repository:
 - Added a Typer CLI at `workout-ml` with `doctor`, `log-failure`, and placeholder commands for later stages (`ingest`, `label`, `pose`, `dataset`, `train`, `app`). The placeholders intentionally exit non-zero until their phases are implemented.
 - Added a `Makefile` with `verify`, `imports`, `test`, `mlflow`, and stage targets. `make mlflow` uses `sqlite:///data/mlflow.db` and `data/mlruns` as planned.
 - Added a short `README.md` with Phase 0 verification and basic CLI commands.
-- Added `.gitignore` for `.venv`, Python caches, test caches, build metadata, and `data/`.
+- Added `.gitignore` for `.venv`, repo-local tool caches, Python caches, test caches, build metadata, and `data/`.
 
 Environment notes:
 
 - `uv` was already installed (`uv 0.5.9`).
 - `ffmpeg` was already installed (`ffmpeg 6.1.1-3ubuntu5`), so no `apt-get` step was required.
-- The sandboxed `uv` cache under `~/.cache` was read-only, so commands used `UV_CACHE_DIR=/tmp/uv-cache`.
+- The sandboxed `uv` cache under `~/.cache` was read-only. Cache defaults now stay inside the repository under `.cache/uv`, which is gitignored.
 - The large PyTorch CPU wheel needed network access and a longer timeout; the successful install used `UV_HTTP_TIMEOUT=180`.
-- `make verify` sets `MPLCONFIGDIR=/tmp/workout-ml-matplotlib` to avoid Matplotlib cache warnings in the restricted home directory.
+- `make verify` sets `MPLCONFIGDIR=.cache/matplotlib` to avoid Matplotlib cache warnings in the restricted home directory while keeping generated cache files contained in the repository and gitignored.
 - `make verify` sets `PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK=True` to skip PaddleOCR's import-time model host connectivity check. A direct import without this variable still imports successfully and prints `ok`, but Paddle reports that no remote model hoster is reachable. Phase 2 should explicitly handle OCR model availability/local caching before running OCR extraction.
 
 Verification output:
 
 ```text
-$ env UV_CACHE_DIR=/tmp/uv-cache uv run python -c "import mediapipe, paddleocr, faster_whisper, torch, duckdb; print('ok')"
+$ env UV_CACHE_DIR=.cache/uv uv run python -c "import mediapipe, paddleocr, faster_whisper, torch, duckdb; print('ok')"
 Checking connectivity to the model hosters, this may take a while. To bypass this check, set `PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK` to `True`.
 No model hoster is available! Please check your network connection to one of the following model hoster: HuggingFace (https://huggingface.co), ModelScope (https://modelscope.cn), AIStudio (https://aistudio.baidu.com), or BOS (https://paddle-model-ecology.bj.bcebos.com). Otherwise, only local models can be used.
 ok
@@ -171,7 +171,7 @@ ok
 $ ffmpeg -version
 ffmpeg version 6.1.1-3ubuntu5
 
-$ env UV_CACHE_DIR=/tmp/uv-cache uv run pytest
+$ env UV_CACHE_DIR=.cache/uv uv run pytest
 collected 7 items
 7 passed in 0.10s
 
