@@ -7,6 +7,9 @@ import typer
 
 from workout_ml import __version__
 from workout_ml.artifacts import fingerprint_payload
+from workout_ml.catalog import Catalog
+from workout_ml.ingest.channels import load_source_registry, source_from_cli
+from workout_ml.ingest.download import ingest_sources
 from workout_ml.progress import StageFailure, append_failure, report_progress
 from workout_ml.settings import ensure_data_dirs, load_pipeline_settings
 
@@ -73,8 +76,80 @@ def _placeholder(stage: str) -> None:
 
 
 @app.command()
-def ingest() -> None:
-    _placeholder("ingest")
+def ingest(
+    video: Annotated[
+        list[str] | None,
+        typer.Option("--video", help="Single YouTube video URL to ingest."),
+    ] = None,
+    playlist: Annotated[
+        list[str] | None,
+        typer.Option("--playlist", help="YouTube playlist URL to ingest."),
+    ] = None,
+    channel: Annotated[
+        list[str] | None,
+        typer.Option("--channel", help="YouTube channel URL to ingest."),
+    ] = None,
+    sources: Annotated[
+        Path,
+        typer.Option("--sources", help="YAML source registry to ingest when provided."),
+    ] = Path("configs/sources.yaml"),
+    limit: Annotated[
+        int | None,
+        typer.Option("--limit", min=1, help="Optional per-source video limit."),
+    ] = None,
+    workers: Annotated[
+        int | None,
+        typer.Option("--workers", min=1, help="Parallel download workers."),
+    ] = None,
+    config: Annotated[
+        Path,
+        typer.Option("--config", help="Path to pipeline YAML config."),
+    ] = Path("configs/pipeline.yaml"),
+) -> None:
+    settings = load_pipeline_settings(config)
+    ensure_data_dirs(settings)
+    source_configs = []
+    for index, url in enumerate(video or [], start=1):
+        source_configs.append(
+            source_from_cli(
+                source_id=f"cli_video_{index}",
+                url=url,
+                source_type="video",
+                limit=limit,
+            )
+        )
+    for index, url in enumerate(playlist or [], start=1):
+        source_configs.append(
+            source_from_cli(
+                source_id=f"cli_playlist_{index}",
+                url=url,
+                source_type="playlist",
+                limit=limit,
+            )
+        )
+    for index, url in enumerate(channel or [], start=1):
+        source_configs.append(
+            source_from_cli(
+                source_id=f"cli_channel_{index}",
+                url=url,
+                source_type="channel",
+                limit=limit,
+            )
+        )
+    if not source_configs:
+        source_configs = load_source_registry(sources).sources
+
+    with Catalog(settings.paths.catalog_path) as catalog:
+        results = ingest_sources(
+            sources=source_configs,
+            settings=settings,
+            catalog=catalog,
+            workers=workers or settings.runtime.default_workers,
+        )
+    downloaded = sum(1 for result in results if result.status == "downloaded")
+    skipped = sum(1 for result in results if result.status == "skipped")
+    failed = sum(1 for result in results if result.status == "failed")
+    typer.echo(f"downloaded={downloaded} skipped={skipped} failed={failed}")
 
 
 @app.command()

@@ -1,1 +1,20 @@
-sources: []
+sources:
+  - source_id: fitness_blender_channel
+    url: https://www.youtube.com/@FitnessBlender/videos
+    source_type: channel
+    priority: general_bootstrap
+    notes: Single-trainer and follow-along workouts suitable for bootstrap ingestion.
+    limit: 5
+  - source_id: hasfit_channel
+    url: https://www.youtube.com/@HASfit/videos
+    source_type: channel
+    priority: general_bootstrap
+    notes: Follow-along workouts with broad bodyweight exercise coverage.
+    limit: 5
+
+# Add personally followed workouts here when URLs are available:
+# - source_id: personal_full_body_example
+#   url: https://www.youtube.com/watch?v=...
+#   source_type: video
+#   priority: personal_routine
+#   notes: Main routine to measure coverage against.

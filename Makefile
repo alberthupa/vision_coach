@@ -1,4 +1,4 @@
-.PHONY: verify imports test mlflow ingest label pose dataset train app
+.PHONY: verify imports test live-ingest mlflow ingest label pose dataset train app
 
 UV_CACHE_DIR ?= .cache/uv
 MPLCONFIGDIR ?= .cache/matplotlib
@@ -11,6 +11,9 @@ imports:
 
 test:
 	$(UV) run pytest
+
+live-ingest:
+	$(UV) run pytest -m live_ingest
 
 mlflow:
 	$(UV) run mlflow server --backend-store-uri sqlite:///data/mlflow.db --default-artifact-root data/mlruns --host 127.0.0.1

@@ -40,6 +40,9 @@ workout-ml = "workout_ml.cli:app"
 testpaths = [
     "tests",
 ]
+markers = [
+    "live_ingest: networked YouTube ingestion acceptance tests",
+]
 
 [tool.uv.sources]
 torch = [

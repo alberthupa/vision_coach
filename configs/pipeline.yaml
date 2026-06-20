@@ -18,3 +18,7 @@ video:
   target_fps: 1.0
   max_height: 720
   download_retries: 2
+  sleep_interval_seconds: 3
+  max_sleep_interval_seconds: 8
+  subtitle_languages: en
+  merge_output_format: mp4

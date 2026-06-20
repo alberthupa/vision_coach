@@ -38,6 +38,10 @@ class VideoSettings(BaseModel):
     target_fps: float = Field(default=1.0, gt=0)
     max_height: PositiveInt = 720
     download_retries: PositiveInt = 2
+    sleep_interval_seconds: PositiveInt = 3
+    max_sleep_interval_seconds: PositiveInt = 8
+    subtitle_languages: str = "en"
+    merge_output_format: str = "mp4"
 
 
 class PipelineSettings(BaseSettings):

@@ -193,10 +193,10 @@ Testing decision:
 
 ### Epic B — Automated corpus ingestion
 
-- [ ] Implement single-video, playlist, and channel ingestion.
-- [ ] Add a configurable source registry, including `priority: personal_routine` videos.
-- [ ] Store probed video metadata and stage state in the catalog.
-- [ ] Prove ingestion is resumable and an unchanged rerun is a no-op.
+- [x] Implement single-video, playlist, and channel ingestion.
+- [x] Add a configurable source registry, including `priority: personal_routine` videos.
+- [x] Store probed video metadata and stage state in the catalog.
+- [x] Prove ingestion is resumable and an unchanged rerun is a no-op.
 
 ### catalog.py
 DuckDB database `data/catalog.duckdb` with tables:
@@ -217,6 +217,44 @@ Seed list of follow-along channels/playlists and personally followed videos. Sel
 
 **Acceptance criteria:**
 - Ingest 5 test videos from one playlist; `data/raw/` contains video + info.json + description for each; catalog rows exist; re-running the same command downloads nothing (idempotency proven by log output).
+
+### Phase 1 implementation notes — 2026-06-20
+
+Completed in this repository:
+
+- Repaired the Phase 0 manifest drift before implementation: `pyproject.toml` again declares the CPU dependency set, PyTorch CPU wheel index, pytest config, and `workout-ml = "workout_ml.cli:app"`. `uv.lock` was restored from the accepted Phase 0 lock because offline `uv lock` could not resolve the PyTorch CPU index metadata from cache.
+- Replaced the catalog placeholder with DuckDB-backed tables and helpers for `videos`, `sources`, `stage_status`, and `artifacts`. Catalog writes are owned by the parent ingestion flow.
+- Added validated source registry loading in `src/workout_ml/ingest/channels.py` with `source_type: video|playlist|channel`, `priority: general_bootstrap|personal_routine`, optional `limit`, and conversion to catalog source rows.
+- Seeded `configs/sources.yaml` with general-bootstrap channel examples and commented personal-routine placeholders. Specific personal workout URLs still need to be added before personal coverage reports can be meaningful.
+- Added `src/workout_ml/ingest/download.py` with source expansion, deterministic download artifact IDs, resumable materialization checks, yt-dlp argument construction, sidecar normalization to `info.json` and `description.txt`, ffprobe parsing, video metadata construction, structured progress output, and per-item failure logging.
+- Wired `workout-ml ingest` with `--video`, `--playlist`, `--channel`, `--sources`, `--limit`, `--workers`, and `--config`.
+- Added `make live-ingest` and a skipped `live_ingest` pytest marker for future networked acceptance against `WORKOUT_ML_LIVE_PLAYLIST_URL`.
+
+Testing schema added:
+
+- Unit tests cover catalog schema idempotency, source validation, yt-dlp policy arguments, ffprobe parsing, playlist expansion limits, resumable no-op behavior, and failure logging while continuing the batch.
+- Offline integration tests use fake `yt-dlp` and `ffprobe` runners and prove first ingest downloads, second unchanged ingest skips, catalog rows are written, canonical sidecars exist, and failed videos append `data/logs/download_failures.jsonl`.
+- Live acceptance is available with `WORKOUT_ML_LIVE_PLAYLIST_URL=<playlist> make live-ingest`; it is intentionally skipped by default because it needs network access and a chosen playlist.
+
+Verification output:
+
+```text
+$ env UV_CACHE_DIR=.cache/uv MPLCONFIGDIR=.cache/matplotlib PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK=True uv run workout-ml --help
+Usage: workout-ml [OPTIONS] COMMAND [ARGS]...
+Commands: doctor, log-failure, ingest, label, pose, dataset, train, app
+
+$ env UV_CACHE_DIR=.cache/uv MPLCONFIGDIR=.cache/matplotlib PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK=True uv run workout-ml doctor
+{"stage":"doctor","completed":1,"total":1,"message":"configuration loaded"}
+ee45ae73bb96298e
+
+$ env UV_CACHE_DIR=.cache/uv MPLCONFIGDIR=.cache/matplotlib PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK=True uv run workout-ml ingest --help
+Options: --video, --playlist, --channel, --sources, --limit, --workers, --config
+
+$ make verify
+ok
+collected 18 items
+17 passed, 1 skipped in 0.38s
+```
 
 ---
 
